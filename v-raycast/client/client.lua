@@ -10,7 +10,6 @@ local boxcolor = Config.BoxColor
 local linecolor = Config.LineColor
 local highlightedlinecolor = Config.HighlightedLineColor
 
-
 RegisterNetEvent('v-raycast:client:toggle')
 AddEventHandler('v-raycast:client:toggle', function()
     enabled = not enabled
@@ -22,8 +21,8 @@ function RotationToDirection(rotation)
     local radRotation = vector3(math.rad(rotation.x), math.rad(rotation.y), math.rad(rotation.z))
     return vector3(
         -math.sin(radRotation.z) * math.abs(math.cos(radRotation.x)),
-        math.cos(radRotation.z) * math.abs(math.cos(radRotation.x)),
-        math.sin(radRotation.x)
+         math.cos(radRotation.z) * math.abs(math.cos(radRotation.x)),
+         math.sin(radRotation.x)
     )
 end
 
@@ -59,7 +58,6 @@ function GetEntityBoundingBox(entity)
     return boundingBoxCache
 end
 
-
 function DrawEntityBoundingBox(entity)
     if not DoesEntityExist(entity) then return end
 
@@ -77,7 +75,6 @@ function DrawEntityBoundingBox(entity)
     local frontTopRight = GetOffsetFromEntityInWorldCoords(entity, max.x, min.y, max.z)
     local backTopLeft   = GetOffsetFromEntityInWorldCoords(entity, min.x, max.y, max.z)
     local backTopRight  = GetOffsetFromEntityInWorldCoords(entity, max.x, max.y, max.z)
-
 
     local function DrawEdge(p1, p2, r, g, b, a)
         DrawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, r, g, b, a)
@@ -104,7 +101,6 @@ function DrawEntityBoundingBox(entity)
     DrawEdge(backBottomRight, backTopRight, edgeColor.r, edgeColor.g, edgeColor.b, edgeColor.a)
 end
 
-
 function GetActiveTasks(entity)
     local currentTime = GetGameTimer()
     if currentTime - lastUpdateTime > 500 then
@@ -119,25 +115,11 @@ function GetActiveTasks(entity)
     return activeTasksCache
 end
 
-
-
-function Draw2DText(x, y, text)
-    SetTextScale(0.55, 0.55)
-    SetTextFont(4)
-    SetTextProportional(1)
-    SetTextColour(255, 255, 255, 215)
-    SetTextEntry("STRING")
-    SetTextCentre(1)
-    AddTextComponentString(text)
-    DrawText(x, y)
-end
-
 function ShowNotification(msg)
-	SetNotificationTextEntry("STRING")
-	AddTextComponentString(msg)
-	DrawNotification(0,1)
+    SetNotificationTextEntry("STRING")
+    AddTextComponentString(msg)
+    DrawNotification(0,1)
 end
-
 
 Citizen.CreateThread(function()
     while true do
@@ -146,9 +128,10 @@ Citizen.CreateThread(function()
             local hit, endCoords, entity = RayCastGamePlayCamera(1000.0)
             local startCoords = GetEntityCoords(PlayerPedId())
             local color = linecolor
-            if hit == 1 then
-                local entityType = "Unknown"
+            local uiText = ""
+            local entityType = "Unknown"
 
+            if hit == 1 then
                 if entity and DoesEntityExist(entity) and entity ~= 0 and (IsEntityAnObject(entity) or IsEntityAVehicle(entity) or IsEntityAPed(entity)) then
                     color = highlightedlinecolor
                     local entityHash = GetEntityModel(entity)
@@ -163,39 +146,52 @@ Citizen.CreateThread(function()
                         local driverPed = GetPedInVehicleSeat(entity, -1)
                         local fuelLevel = GetVehicleFuelLevel(entity)
                         local engineHealth = GetVehicleEngineHealth(entity)
-
-                        Draw2DText(screenX, screenY + 0.16, 'Speed: ' .. math.floor(speed) .. " km/h\nPlate: " .. plate ..
-                            "\nHealth: " .. health .. "\nDriver: " .. (driverPed ~= 0 and "Yes" or "No") ..
-                            "\nFuel: " .. math.floor(fuelLevel) .. '%\nEngine Health: ' .. engineHealth)
+                        uiText = 'Speed: ' .. math.floor(speed) .. " km/h\nPlate: " .. plate ..
+                                 "\nHealth: " .. health .. "\nDriver: " .. (driverPed ~= 0 and "Yes" or "No") ..
+                                 "\nFuel: " .. math.floor(fuelLevel) .. "%\nEngine Health: " .. engineHealth .. "\n"
                     elseif IsEntityAPed(entity) then
                         entityType = "Ped"
                         local health = GetEntityHealth(entity)
                         local armor = GetPedArmour(entity)
                         local taskNames = GetActiveTasks(entity)
                         local taskText = "Tasks: " .. table.concat(taskNames, ", ")
-
-                        Draw2DText(screenX, screenY + 0.16, 'Health: ' .. health .. "\nArmor: " .. armor .. "\n" .. taskText)
+                        uiText = 'Health: ' .. health .. "\nArmor: " .. armor .. "\n" .. taskText .. "\n"
                     elseif IsEntityAnObject(entity) then
                         entityType = "Object"
                         local distance = #(coords - startCoords)
                         local height = GetEntityHeightAboveGround(entity)
-
-                        Draw2DText(screenX, screenY + 0.16, 'Distance: ' .. string.format("%.2f", distance) .. " meters\nHeight: " .. height)
+                        uiText = 'Distance: ' .. string.format("%.2f", distance) .. " meters\nHeight: " .. height .. "\n"
                     end
 
-                    Draw2DText(screenX, screenY + 0.03, 'Type: ' .. entityType .. '\nHash: ' .. entityHash ..
-                        '\nCoords: (' .. string.format('%.2f, %.2f, %.2f', coords.x, coords.y, coords.z) ..
-                        ')\nHeading: ' .. string.format('%.2f', heading))
+                    uiText = uiText .. 'Type: ' .. entityType .. '\nHash: ' .. entityHash ..
+                             '\nCoords: (' .. string.format('%.2f, %.2f, %.2f', coords.x, coords.y, coords.z) ..
+                             ')\nHeading: ' .. string.format('%.2f', heading)
 
                     DrawEntityBoundingBox(entity)
                 else
-                    Draw2DText(screenX, screenY + 0.03, 'Type: ' .. entityType .. '\nCoords: (' .. string.format('%.2f, %.2f, %.2f', endCoords.x, endCoords.y, endCoords.z) .. ')')
-                    Draw2DText(screenX, screenY + 0.09, "No valid entity hit")
+                    uiText = 'Type: ' .. entityType .. '\nCoords: (' .. string.format('%.2f, %.2f, %.2f', endCoords.x, endCoords.y, endCoords.z) .. ')\n'
+                    uiText = uiText .. "No valid entity hit"
                 end
+
                 DrawLine(startCoords.x, startCoords.y, startCoords.z, endCoords.x, endCoords.y, endCoords.z, color.r, color.g, color.b, color.a)
                 DrawMarker(28, endCoords.x, endCoords.y, endCoords.z, 0.0, 0.0, 0.0, 0.0, 180.0, 0.0, 0.1, 0.1, 0.1, color.r, color.g, color.b, color.a, false, true, 2, nil, nil, false)
             end
+
+            if uiText ~= "" then
+                lib.showTextUI(uiText, {
+                    position = 'top-center',
+                    style = {
+                        backgroundColor = 'rgba(0, 0, 0, 0.5)',
+                        color = 'white'
+                    }
+                })
+            else
+                lib.hideTextUI()
+            end
+        else
+            lib.hideTextUI()
         end
+
         Citizen.Wait(waitTime)
     end
 end)
